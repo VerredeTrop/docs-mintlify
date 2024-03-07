@@ -23,11 +23,6 @@
   },
   "anchors": [
     {
-      "name": "Documentation",
-      "icon": "book-open-cover",
-      "url": "https://chargeapi.co/docs"
-    },
-    {
       "name": "Blog",
       "icon": "newspaper",
       "url": "https://chargeapi.co/blog"
