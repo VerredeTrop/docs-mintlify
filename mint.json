@@ -1,5 +1,8 @@
 {
   "name": "Charge",
+  "modeToggle": {
+    "default": "light"
+  },  
   "logo": {
     "dark": "https://chargeapi.co/public/img/logo-white.png",
     "light": "https://chargeapi.co/public/img/logo.png",
@@ -14,7 +17,7 @@
   "topbarLinks": [
     {
       "name": "Contact",
-      "url": "mailto:valentinm@chargeapi.co"
+      "url": "https://chargeapi.co/contact"
     }
   ],
   "topbarCtaButton": {
