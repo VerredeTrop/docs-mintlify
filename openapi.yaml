@@ -1,0 +1,491 @@
+openapi: 3.1.0
+info:
+  title: Charging Station API
+  description: |
+    API for finding and monitoring EV charging stations, providing real-time information
+    about station availability, capabilities, and status.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+  - url: https://staging-api.example.com/v1
+    description: Staging server
+paths:
+  /stations:
+    get:
+      summary: List available charging stations
+      description: |
+        Returns a list of available charging stations based on the provided filters.
+        Filters can include location, power level, pricing, and more.
+      operationId: getStations
+      parameters:
+        - name: latitude
+          in: query
+          description: Latitude coordinate for location-based search
+          schema:
+            type: number
+            format: double
+          example: 37.7749
+        - name: longitude
+          in: query
+          description: Longitude coordinate for location-based search
+          schema:
+            type: number
+            format: double
+          example: -122.4194
+        - name: radius
+          in: query
+          description: Search radius in kilometers
+          schema:
+            type: number
+            format: double
+            default: 5
+          example: 10
+        - name: minPower
+          in: query
+          description: Minimum power level in kW
+          schema:
+            type: number
+            minimum: 0
+          example: 50
+        - name: connectorTypes
+          in: query
+          description: Filter by connector types
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [CCS, CHAdeMO, Type2, Tesla]
+          style: form
+          explode: false
+          example: CCS,CHAdeMO
+        - name: availability
+          in: query
+          description: Filter by current availability status
+          schema:
+            type: string
+            enum: [available, all]
+            default: all
+        - name: limit
+          in: query
+          description: Maximum number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of results to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Successfully retrieved list of charging stations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StationSummary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  
+  /stations/{stationId}:
+    get:
+      summary: Get station details
+      description: Returns detailed information about a specific charging station
+      operationId: getStationDetails
+      parameters:
+        - name: stationId
+          in: path
+          description: Unique identifier of the charging station
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved station details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/StationDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+          
+  /stations/{stationId}/status:
+    get:
+      summary: Get station status
+      description: |
+        Returns real-time information about a station's availability and power output.
+        Includes whether the station is occupied, available, or out of service.
+      operationId: getStationStatus
+      parameters:
+        - name: stationId
+          in: path
+          description: Unique identifier of the charging station
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved station status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/StationStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    StationSummary:
+      type: object
+      required:
+        - id
+        - name
+        - location
+        - status
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the charging station
+        name:
+          type: string
+          description: Name of the charging station
+        operator:
+          type: string
+          description: Operator or company managing the station
+        location:
+          $ref: '#/components/schemas/Location'
+        connectors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectorSummary'
+        status:
+          $ref: '#/components/schemas/StationStatusSummary'
+        distance:
+          type: number
+          description: Distance from search coordinates in kilometers
+          
+    StationDetail:
+      type: object
+      required:
+        - id
+        - name
+        - location
+        - status
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the charging station
+        name:
+          type: string
+          description: Name of the charging station
+        operator:
+          type: string
+          description: Operator or company managing the station
+        location:
+          $ref: '#/components/schemas/Location'
+        address:
+          $ref: '#/components/schemas/Address'
+        connectors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Connector'
+        amenities:
+          type: array
+          items:
+            type: string
+            enum: [restrooms, food, shopping, wifi, shelter]
+          description: Available amenities at or near the charging station
+        openingHours:
+          type: string
+          description: Opening hours in standard format
+          example: "Mo-Fr 08:00-20:00, Sa-Su 10:00-18:00"
+        paymentOptions:
+          type: array
+          items:
+            type: string
+            enum: [creditCard, debitCard, app, rfid, free]
+        contactPhone:
+          type: string
+          description: Contact phone number for support
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: URLs to station photos
+        status:
+          $ref: '#/components/schemas/StationStatusSummary'
+        lastUpdated:
+          type: string
+          format: date-time
+          description: Timestamp of the last data update
+          
+    StationStatus:
+      type: object
+      required:
+        - stationId
+        - overall
+        - connectors
+        - lastUpdated
+      properties:
+        stationId:
+          type: string
+          description: Unique identifier for the charging station
+        overall:
+          type: string
+          enum: [available, partially_available, occupied, out_of_service, unknown]
+          description: Overall status of the station
+        connectors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectorStatus'
+        lastUpdated:
+          type: string
+          format: date-time
+          description: Timestamp of the last status update
+    
+    StationStatusSummary:
+      type: object
+      required:
+        - overall
+        - availableConnectors
+        - totalConnectors
+      properties:
+        overall:
+          type: string
+          enum: [available, partially_available, occupied, out_of_service, unknown]
+          description: Overall status of the station
+        availableConnectors:
+          type: integer
+          description: Number of available connectors
+        totalConnectors:
+          type: integer
+          description: Total number of connectors
+          
+    ConnectorSummary:
+      type: object
+      required:
+        - type
+        - power
+      properties:
+        type:
+          type: string
+          enum: [CCS, CHAdeMO, Type2, Tesla]
+          description: Type of connector
+        power:
+          type: number
+          description: Maximum power output in kW
+        
+    Connector:
+      type: object
+      required:
+        - id
+        - type
+        - power
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the connector
+        type:
+          type: string
+          enum: [CCS, CHAdeMO, Type2, Tesla]
+          description: Type of connector
+        power:
+          type: number
+          description: Maximum power output in kW
+        voltage:
+          type: number
+          description: Voltage in V
+        current:
+          type: number
+          description: Current in A
+        pricing:
+          $ref: '#/components/schemas/Pricing'
+          
+    ConnectorStatus:
+      type: object
+      required:
+        - connectorId
+        - status
+      properties:
+        connectorId:
+          type: string
+          description: Unique identifier for the connector
+        status:
+          type: string
+          enum: [available, occupied, out_of_service, unknown]
+          description: Current status of the connector
+        currentPower:
+          type: number
+          description: Current power output in kW (if occupied)
+        estimatedEndTime:
+          type: string
+          format: date-time
+          description: Estimated time when the current charging session will end (if occupied)
+          
+    Location:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: number
+          format: double
+          description: Latitude coordinate
+        longitude:
+          type: number
+          format: double
+          description: Longitude coordinate
+          
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+          description: Street address
+        city:
+          type: string
+          description: City
+        state:
+          type: string
+          description: State or province
+        postalCode:
+          type: string
+          description: Postal or ZIP code
+        country:
+          type: string
+          description: Country
+          
+    Pricing:
+      type: object
+      properties:
+        model:
+          type: string
+          enum: [per_kwh, per_minute, per_session, free]
+          description: Pricing model
+        currency:
+          type: string
+          description: Currency code
+          example: USD
+        rate:
+          type: number
+          description: Rate based on the pricing model (per kWh, per minute, etc.)
+        additionalFees:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fee'
+            
+    Fee:
+      type: object
+      required:
+        - description
+        - amount
+      properties:
+        description:
+          type: string
+          description: Description of the fee
+        amount:
+          type: number
+          description: Amount of the fee
+          
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of available results
+        limit:
+          type: integer
+          description: Maximum number of results per page
+        offset:
+          type: integer
+          description: Current offset from the first result
+        
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Error message
+          
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                $ref: '#/components/schemas/Error'
+                
+    NotFound:
+      description: The requested resource was not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                $ref: '#/components/schemas/Error'
+                
+    InternalServerError:
+      description: An unexpected error occurred
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+    OAuth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read:stations: Read station information
+            read:status: Read station status
+
+security:
+  - ApiKeyAuth: []
+  - OAuth2: [read:stations, read:status]
