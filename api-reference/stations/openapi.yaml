@@ -1,0 +1,213 @@
+openapi: 3.1.0
+info:
+  title: Charging Station API - Stations
+  description: API endpoints for managing and retrieving charging station information
+  version: 1.0.0
+servers:
+  - url: https://api.chargeapi.com/v1
+    description: Production server
+
+paths:
+  /stations:
+    get:
+      summary: Get a list of available charging stations
+      description: Returns a list of charging stations based on various filters
+      operationId: listStations
+      parameters:
+        - name: latitude
+          in: query
+          description: Latitude coordinate for location-based search
+          schema:
+            type: number
+            format: double
+        - name: longitude
+          in: query
+          description: Longitude coordinate for location-based search
+          schema:
+            type: number
+            format: double
+        - name: radius
+          in: query
+          description: Search radius in kilometers
+          schema:
+            type: number
+            default: 5
+        - name: power_level
+          in: query
+          description: Minimum power level in kW
+          schema:
+            type: number
+        - name: pricing
+          in: query
+          description: Filter by pricing type
+          schema:
+            type: string
+            enum: [free, paid]
+
+  /stations/{station_id}:
+    get:
+      summary: Get details of a specific station
+      description: Returns detailed information about a charging station
+      operationId: getStation
+      parameters:
+        - name: station_id
+          in: path
+          required: true
+          description: Unique identifier of the station
+          schema:
+            type: string
+
+  /stations/{station_id}/status:
+    get:
+      summary: Get real-time station status
+      description: Returns current availability and power output information
+      operationId: getStationStatus
+      parameters:
+        - name: station_id
+          in: path
+          required: true
+          description: Unique identifier of the station
+          schema:
+            type: string
+
+  /stations/nearby:
+    get:
+      summary: Search for nearby stations
+      description: Find charging stations based on geolocation
+      operationId: getNearbyStations
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          description: Current latitude
+          schema:
+            type: number
+        - name: longitude
+          in: query
+          required: true
+          description: Current longitude
+          schema:
+            type: number
+        - name: radius
+          in: query
+          description: Search radius in kilometers
+          schema:
+            type: number
+            default: 5
+
+  /stations/{station_id}/pricing:
+    get:
+      summary: Get station pricing details
+      description: Retrieve pricing information including per kWh rates and fees
+      operationId: getStationPricing
+      parameters:
+        - name: station_id
+          in: path
+          required: true
+          description: Unique identifier of the station
+          schema:
+            type: string
+
+  /stations/{station_id}/amenities:
+    get:
+      summary: List station amenities
+      description: Get available amenities at or near the charging station
+      operationId: getStationAmenities
+      parameters:
+        - name: station_id
+          in: path
+          required: true
+          description: Unique identifier of the station
+          schema:
+            type: string
+
+components:
+  schemas:
+    Station:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+            longitude:
+              type: number
+            address:
+              type: string
+        status:
+          type: string
+          enum: [available, occupied, offline, maintenance]
+        power_level:
+          type: number
+        connector_types:
+          type: array
+          items:
+            type: string
+            enum: [CCS, CHAdeMO, Type2, Tesla]
+
+    StationStatus:
+      type: object
+      properties:
+        station_id:
+          type: string
+        status:
+          type: string
+          enum: [available, occupied, offline, maintenance]
+        current_power:
+          type: number
+        occupancy_time:
+          type: string
+          format: date-time
+
+    PricingInfo:
+      type: object
+      properties:
+        per_kwh:
+          type: number
+        session_fee:
+          type: number
+        idle_fee:
+          type: number
+        currency:
+          type: string
+
+    Amenities:
+      type: object
+      properties:
+        restrooms:
+          type: boolean
+        food:
+          type: boolean
+        wifi:
+          type: boolean
+        shopping:
+          type: boolean
+        parking:
+          type: boolean
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+
+security:
+  - ApiKeyAuth: []

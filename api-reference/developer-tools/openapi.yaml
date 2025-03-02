@@ -1,0 +1,215 @@
+openapi: 3.1.0
+info:
+  title: Charging Station API - Developer Tools
+  description: API endpoints for managing API keys, webhooks, and developer settings
+  version: 1.0.0
+servers:
+  - url: https://api.chargeapi.com/v1
+    description: Production server
+
+paths:
+  /developer/api-keys:
+    get:
+      summary: List API keys
+      description: Retrieve all API keys for the account
+      operationId: listApiKeys
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, revoked, expired]
+    
+    post:
+      summary: Create API key
+      description: Generate a new API key
+      operationId: createApiKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - scopes
+              properties:
+                name:
+                  type: string
+                  description: Friendly name for the API key
+                scopes:
+                  type: array
+                  items:
+                    type: string
+                    enum: [read, write, admin]
+                expiry:
+                  type: string
+                  format: date-time
+                  description: Optional expiration date
+
+  /developer/api-keys/{key_id}:
+    delete:
+      summary: Revoke API key
+      description: Revoke an existing API key
+      operationId: revokeApiKey
+      parameters:
+        - name: key_id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /developer/webhooks:
+    get:
+      summary: List webhooks
+      description: Get all configured webhooks
+      operationId: listWebhooks
+
+    post:
+      summary: Create webhook
+      description: Configure a new webhook endpoint
+      operationId: createWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookConfig'
+
+  /developer/webhooks/{webhook_id}:
+    put:
+      summary: Update webhook
+      description: Modify an existing webhook configuration
+      operationId: updateWebhook
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookConfig'
+
+    delete:
+      summary: Delete webhook
+      description: Remove a webhook configuration
+      operationId: deleteWebhook
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /developer/webhooks/{webhook_id}/test:
+    post:
+      summary: Test webhook
+      description: Send a test event to the webhook endpoint
+      operationId: testWebhook
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_type:
+                  type: string
+                  enum: [session.started, session.ended, payment.succeeded]
+
+components:
+  schemas:
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+        key:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [active, revoked, expired]
+        scopes:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        last_used:
+          type: string
+          format: date-time
+
+    WebhookConfig:
+      type: object
+      required:
+        - url
+        - events
+      properties:
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum:
+              - session.started
+              - session.ended
+              - payment.succeeded
+              - payment.failed
+              - account.updated
+        secret:
+          type: string
+          description: Webhook signing secret
+        description:
+          type: string
+        active:
+          type: boolean
+          default: true
+        retry_config:
+          type: object
+          properties:
+            max_attempts:
+              type: integer
+              default: 3
+            interval:
+              type: integer
+              description: Retry interval in seconds
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+
+security:
+  - ApiKeyAuth: []

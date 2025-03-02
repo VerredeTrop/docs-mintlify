@@ -15,11 +15,84 @@
         "icon": "book-open",
         "groups": [
           {
-            "group": "API Reference",
+            "group": "Getting Started",
+            "pages": ["introduction"]
+          },
+          {
+            "group": "Stations API",
             "pages": [
-              "list-available-charging-stations",
-              "get-station-details",
-              "get-station-status"
+              "api-reference/stations/list-stations",
+              "api-reference/stations/get-station",
+              "api-reference/stations/get-status",
+              "api-reference/stations/nearby",
+              "api-reference/stations/pricing",
+              "api-reference/stations/amenities"
+            ]
+          },
+          {
+            "group": "Sessions API",
+            "pages": [
+              "api-reference/sessions/start",
+              "api-reference/sessions/stop",
+              "api-reference/sessions/details",
+              "api-reference/sessions/user-history",
+              "api-reference/sessions/fleet-history",
+              "api-reference/sessions/reserve",
+              "api-reference/sessions/unlock",
+              "api-reference/sessions/active"
+            ]
+          },
+          {
+            "group": "Payments API",
+            "pages": [
+              "api-reference/payments/initiate",
+              "api-reference/payments/status",
+              "api-reference/payments/refund",
+              "api-reference/payments/methods",
+              "api-reference/payments/add-method",
+              "api-reference/payments/remove-method"
+            ]
+          },
+          {
+            "group": "Fleet Management API",
+            "pages": [
+              "api-reference/fleet/accounts",
+              "api-reference/fleet/create",
+              "api-reference/fleet/fund",
+              "api-reference/fleet/transactions"
+            ]
+          },
+          {
+            "group": "Developer Tools",
+            "pages": [
+              "api-reference/developer-tools/metadata",
+              "api-reference/developer-tools/webhooks",
+              "api-reference/developer-tools/register-webhook",
+              "api-reference/developer-tools/update-webhook",
+              "api-reference/developer-tools/remove-webhook"
+            ]
+          },
+          {
+            "group": "Webhook Events",
+            "pages": [
+              "api-reference/webhooks/events",
+              "api-reference/webhooks/charge-events",
+              "api-reference/webhooks/payment-events",
+              "api-reference/webhooks/station-events",
+              "api-reference/webhooks/fleet-events",
+              "api-reference/webhooks/vehicle-events"
+            ]
+          },
+          {
+            "group": "Vehicle Integration",
+            "pages": [
+              "api-reference/vehicles/list",
+              "api-reference/vehicles/add",
+              "api-reference/vehicles/details",
+              "api-reference/vehicles/update",
+              "api-reference/vehicles/remove",
+              "api-reference/vehicles/battery",
+              "api-reference/vehicles/charging-history"
             ]
           }
         ]

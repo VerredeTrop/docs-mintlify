@@ -1,0 +1,275 @@
+openapi: 3.1.0
+info:
+  title: Charging Station API - Vehicle Integration
+  description: API endpoints for managing vehicle connections and telemetry
+  version: 1.0.0
+servers:
+  - url: https://api.chargeapi.com/v1
+    description: Production server
+
+paths:
+  /vehicles:
+    get:
+      summary: List connected vehicles
+      description: Get all vehicles connected to the account
+      operationId: listVehicles
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [connected, disconnected, charging]
+        - name: make
+          in: query
+          schema:
+            type: string
+        - name: model
+          in: query
+          schema:
+            type: string
+
+    post:
+      summary: Add vehicle
+      description: Connect a new vehicle to the account
+      operationId: addVehicle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleRegistration'
+
+  /vehicles/{vehicle_id}:
+    get:
+      summary: Get vehicle details
+      description: Retrieve detailed information about a specific vehicle
+      operationId: getVehicleDetails
+      parameters:
+        - name: vehicle_id
+          in: path
+          required: true
+          schema:
+            type: string
+
+    put:
+      summary: Update vehicle
+      description: Modify vehicle settings or information
+      operationId: updateVehicle
+      parameters:
+        - name: vehicle_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleUpdate'
+
+    delete:
+      summary: Remove vehicle
+      description: Disconnect a vehicle from the account
+      operationId: removeVehicle
+      parameters:
+        - name: vehicle_id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /vehicles/{vehicle_id}/telemetry:
+    get:
+      summary: Get vehicle telemetry
+      description: Retrieve real-time telemetry data from the vehicle
+      operationId: getVehicleTelemetry
+      parameters:
+        - name: vehicle_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: metrics
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [battery_level, range, temperature, voltage, current]
+
+  /vehicles/{vehicle_id}/charging-schedule:
+    get:
+      summary: Get charging schedule
+      description: Retrieve the charging schedule for a vehicle
+      operationId: getChargingSchedule
+      parameters:
+        - name: vehicle_id
+          in: path
+          required: true
+          schema:
+            type: string
+
+    post:
+      summary: Set charging schedule
+      description: Configure charging schedule for a vehicle
+      operationId: setChargingSchedule
+      parameters:
+        - name: vehicle_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChargingSchedule'
+
+components:
+  schemas:
+    VehicleRegistration:
+      type: object
+      required:
+        - make
+        - model
+        - year
+        - vin
+      properties:
+        make:
+          type: string
+        model:
+          type: string
+        year:
+          type: integer
+        vin:
+          type: string
+        nickname:
+          type: string
+        fleet_id:
+          type: string
+        telemetry_enabled:
+          type: boolean
+          default: true
+
+    VehicleUpdate:
+      type: object
+      properties:
+        nickname:
+          type: string
+        telemetry_enabled:
+          type: boolean
+        charging_preferences:
+          type: object
+          properties:
+            target_soc:
+              type: integer
+              minimum: 0
+              maximum: 100
+            smart_charging_enabled:
+              type: boolean
+            max_charging_current:
+              type: number
+
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+        make:
+          type: string
+        model:
+          type: string
+        year:
+          type: integer
+        vin:
+          type: string
+        nickname:
+          type: string
+        status:
+          type: string
+          enum: [connected, disconnected, charging]
+        battery_level:
+          type: integer
+        estimated_range:
+          type: number
+        last_connected:
+          type: string
+          format: date-time
+        fleet_id:
+          type: string
+
+    VehicleTelemetry:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        battery_level:
+          type: integer
+        range:
+          type: number
+        temperature:
+          type: number
+        voltage:
+          type: number
+        current:
+          type: number
+        charging_power:
+          type: number
+        charging_rate:
+          type: number
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+            longitude:
+              type: number
+
+    ChargingSchedule:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        schedule:
+          type: array
+          items:
+            type: object
+            properties:
+              day:
+                type: string
+                enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+              start_time:
+                type: string
+                format: time
+              end_time:
+                type: string
+                format: time
+              target_soc:
+                type: integer
+                minimum: 0
+                maximum: 100
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+
+security:
+  - ApiKeyAuth: []

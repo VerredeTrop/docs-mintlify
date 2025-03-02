@@ -1,0 +1,224 @@
+openapi: 3.1.0
+info:
+  title: Charging Station API - Fleet Management
+  description: API endpoints for managing fleet accounts and transactions
+  version: 1.0.0
+servers:
+  - url: https://api.chargeapi.com/v1
+    description: Production server
+
+paths:
+  /fleet/accounts:
+    get:
+      summary: Retrieve fleet accounts
+      description: Get a list of fleet accounts linked to a user
+      operationId: getFleetAccounts
+      parameters:
+        - name: user_id
+          in: query
+          description: Filter by user ID
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by account status
+          schema:
+            type: string
+            enum: [active, suspended, pending]
+
+  /fleet/accounts/create:
+    post:
+      summary: Create fleet account
+      description: Create a new fleet account
+      operationId: createFleetAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - company_name
+                - admin_email
+              properties:
+                company_name:
+                  type: string
+                admin_email:
+                  type: string
+                  format: email
+                billing_address:
+                  $ref: '#/components/schemas/Address'
+                payment_method:
+                  $ref: '#/components/schemas/PaymentMethodDetails'
+                vehicle_limit:
+                  type: integer
+                  description: Maximum number of vehicles allowed
+
+  /fleet/accounts/{account_id}/fund:
+    post:
+      summary: Add balance to fleet account
+      description: Fund an existing fleet account
+      operationId: fundFleetAccount
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Unique identifier of the fleet account
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+                - currency
+              properties:
+                amount:
+                  type: number
+                currency:
+                  type: string
+                payment_method_id:
+                  type: string
+
+  /fleet/accounts/{account_id}/transactions:
+    get:
+      summary: List fleet transactions
+      description: Get all transactions for a fleet account
+      operationId: getFleetTransactions
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Unique identifier of the fleet account
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [charge, fund, refund, fee]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+
+components:
+  schemas:
+    FleetAccount:
+      type: object
+      properties:
+        id:
+          type: string
+        company_name:
+          type: string
+        status:
+          type: string
+          enum: [active, suspended, pending]
+        balance:
+          type: number
+        currency:
+          type: string
+        admin_email:
+          type: string
+          format: email
+        created_at:
+          type: string
+          format: date-time
+        vehicle_count:
+          type: integer
+        vehicle_limit:
+          type: integer
+
+    FleetTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+        account_id:
+          type: string
+        type:
+          type: string
+          enum: [charge, fund, refund, fee]
+        amount:
+          type: number
+        currency:
+          type: string
+        balance_after:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        description:
+          type: string
+        reference_id:
+          type: string
+          description: Related session or payment ID
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postal_code:
+          type: string
+        country:
+          type: string
+
+    PaymentMethodDetails:
+      type: object
+      required:
+        - type
+        - token
+      properties:
+        type:
+          type: string
+          enum: [credit_card, bank_account]
+        token:
+          type: string
+        billing_address:
+          $ref: '#/components/schemas/Address'
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+
+security:
+  - ApiKeyAuth: []

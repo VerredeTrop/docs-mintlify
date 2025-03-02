@@ -1,0 +1,199 @@
+openapi: 3.1.0
+info:
+  title: Charging Station API - Payments
+  description: API endpoints for managing payments and payment methods
+  version: 1.0.0
+servers:
+  - url: https://api.chargeapi.com/v1
+    description: Production server
+
+paths:
+  /payments/initiate:
+    post:
+      summary: Create a charging payment request
+      description: Initiate a payment for a charging session
+      operationId: initiatePayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - session_id
+                - payment_method_id
+              properties:
+                session_id:
+                  type: string
+                payment_method_id:
+                  type: string
+                amount:
+                  type: number
+                currency:
+                  type: string
+                  default: USD
+
+  /payments/{payment_id}:
+    get:
+      summary: Get payment status/details
+      description: Retrieve details about a specific payment
+      operationId: getPaymentDetails
+      parameters:
+        - name: payment_id
+          in: path
+          required: true
+          description: Unique identifier of the payment
+          schema:
+            type: string
+
+  /payments/refund:
+    post:
+      summary: Issue a refund
+      description: Process a refund for a charging session
+      operationId: issueRefund
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - payment_id
+              properties:
+                payment_id:
+                  type: string
+                amount:
+                  type: number
+                  description: Amount to refund (if partial refund)
+                reason:
+                  type: string
+
+  /payments/methods:
+    get:
+      summary: Get payment methods
+      description: Retrieve supported payment methods
+      operationId: getPaymentMethods
+      parameters:
+        - name: user_id
+          in: query
+          description: Filter methods by user
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Filter by payment method type
+          schema:
+            type: string
+            enum: [card, wallet, fleet_account]
+
+    post:
+      summary: Add payment method
+      description: Add a new payment method
+      operationId: addPaymentMethod
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentMethodRequest'
+
+  /payments/methods/{method_id}:
+    delete:
+      summary: Remove payment method
+      description: Delete an existing payment method
+      operationId: removePaymentMethod
+      parameters:
+        - name: method_id
+          in: path
+          required: true
+          description: Unique identifier of the payment method
+          schema:
+            type: string
+
+components:
+  schemas:
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+        session_id:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending, completed, failed, refunded]
+        payment_method:
+          type: object
+          properties:
+            id:
+              type: string
+            type:
+              type: string
+            last4:
+              type: string
+        timestamp:
+          type: string
+          format: date-time
+        refund_status:
+          type: string
+          enum: [none, partial, full]
+
+    PaymentMethodRequest:
+      type: object
+      required:
+        - type
+        - token
+      properties:
+        type:
+          type: string
+          enum: [card, wallet, fleet_account]
+        token:
+          type: string
+          description: Secure token from payment processor
+        billing_details:
+          type: object
+          properties:
+            name:
+              type: string
+            address:
+              $ref: '#/components/schemas/Address'
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postal_code:
+          type: string
+        country:
+          type: string
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+
+security:
+  - ApiKeyAuth: []
