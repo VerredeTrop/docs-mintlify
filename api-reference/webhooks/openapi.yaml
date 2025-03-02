@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Charging Station API - Webhook Events
-  description: Webhook event specifications and event types
+  description: API endpoints for webhook event notifications and configurations
   version: 1.0.0
 servers:
   - url: https://api.chargeapi.com/v1
@@ -11,252 +11,165 @@ paths:
   /webhooks/events:
     get:
       summary: List webhook events
-      description: Get a list of all possible webhook events and their specifications
+      description: Get a list of all possible webhook events
       operationId: listWebhookEvents
-      responses:
-        '200':
-          description: List of webhook events
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  events:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/WebhookEventSpec'
+
+  /webhooks/charge-events:
+    get:
+      summary: Get charging events
+      description: Retrieve charging-related webhook events
+      operationId: getChargeEvents
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [started, completed, interrupted]
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+
+  /webhooks/payment-events:
+    get:
+      summary: Get payment events
+      description: Retrieve payment-related webhook events
+      operationId: getPaymentEvents
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [succeeded, failed, refunded]
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+
+  /webhooks/station-events:
+    get:
+      summary: Get station events
+      description: Retrieve station-related webhook events
+      operationId: getStationEvents
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [status_change, maintenance, offline]
+        - name: station_id
+          in: query
+          schema:
+            type: string
+
+  /webhooks/fleet-events:
+    get:
+      summary: Get fleet events
+      description: Retrieve fleet-related webhook events
+      operationId: getFleetEvents
+      parameters:
+        - name: account_id
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [balance_low, transaction_completed]
+
+  /webhooks/vehicle-events:
+    get:
+      summary: Get vehicle events
+      description: Retrieve vehicle-related webhook events
+      operationId: getVehicleEvents
+      parameters:
+        - name: vehicle_id
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [connected, disconnected, charging_started, charging_completed]
 
 components:
   schemas:
-    WebhookEventSpec:
-      type: object
-      properties:
-        event:
-          type: string
-          enum: [
-            charge.session.started,
-            charge.session.ended,
-            charge.session.error,
-            payment.success,
-            payment.failed,
-            payment.refunded,
-            station.status.changed,
-            station.error,
-            station.maintenance,
-            fleet.balance.low,
-            vehicle.connected,
-            vehicle.disconnected
-          ]
-        description:
-          type: string
-        payload_schema:
-          type: object
-          description: JSON Schema of the event payload
-
-    ChargeSessionStartedEvent:
-      type: object
-      required:
-        - event
-        - data
-      properties:
-        event:
-          type: string
-          enum: [charge.session.started]
-        data:
-          type: object
-          properties:
-            session_id:
-              type: string
-            station_id:
-              type: string
-            user_id:
-              type: string
-            vehicle_id:
-              type: string
-            start_time:
-              type: string
-              format: date-time
-            connector_type:
-              type: string
-            initial_battery_level:
-              type: number
-
-    ChargeSessionEndedEvent:
-      type: object
-      required:
-        - event
-        - data
-      properties:
-        event:
-          type: string
-          enum: [charge.session.ended]
-        data:
-          type: object
-          properties:
-            session_id:
-              type: string
-            end_time:
-              type: string
-              format: date-time
-            duration:
-              type: integer
-              description: Duration in seconds
-            energy_delivered:
-              type: number
-            final_battery_level:
-              type: number
-            cost:
-              type: number
-            currency:
-              type: string
-
-    PaymentEvent:
-      type: object
-      required:
-        - event
-        - data
-      properties:
-        event:
-          type: string
-          enum: [payment.success, payment.failed, payment.refunded]
-        data:
-          type: object
-          properties:
-            payment_id:
-              type: string
-            session_id:
-              type: string
-            amount:
-              type: number
-            currency:
-              type: string
-            status:
-              type: string
-            timestamp:
-              type: string
-              format: date-time
-            error_code:
-              type: string
-            error_message:
-              type: string
-
-    StationStatusEvent:
-      type: object
-      required:
-        - event
-        - data
-      properties:
-        event:
-          type: string
-          enum: [station.status.changed, station.error, station.maintenance]
-        data:
-          type: object
-          properties:
-            station_id:
-              type: string
-            previous_status:
-              type: string
-            new_status:
-              type: string
-            timestamp:
-              type: string
-              format: date-time
-            error_code:
-              type: string
-            maintenance_type:
-              type: string
-            estimated_resolution_time:
-              type: string
-              format: date-time
-
-    FleetBalanceEvent:
-      type: object
-      required:
-        - event
-        - data
-      properties:
-        event:
-          type: string
-          enum: [fleet.balance.low]
-        data:
-          type: object
-          properties:
-            fleet_id:
-              type: string
-            current_balance:
-              type: number
-            currency:
-              type: string
-            threshold:
-              type: number
-            timestamp:
-              type: string
-              format: date-time
-
-    VehicleConnectionEvent:
-      type: object
-      required:
-        - event
-        - data
-      properties:
-        event:
-          type: string
-          enum: [vehicle.connected, vehicle.disconnected]
-        data:
-          type: object
-          properties:
-            vehicle_id:
-              type: string
-            station_id:
-              type: string
-            timestamp:
-              type: string
-              format: date-time
-            connector_type:
-              type: string
-            battery_level:
-              type: number
-
-    WebhookDelivery:
+    WebhookEvent:
       type: object
       properties:
         id:
           type: string
-        event:
+        type:
           type: string
         timestamp:
           type: string
           format: date-time
-        payload:
+        data:
           type: object
-        delivery_status:
+        status:
           type: string
-          enum: [success, failed, pending]
         retry_count:
           type: integer
-        next_retry:
+
+    ChargingEvent:
+      type: object
+      properties:
+        session_id:
+          type: string
+        station_id:
+          type: string
+        status:
+          type: string
+          enum: [started, completed, interrupted]
+        duration:
+          type: integer
+        energy_delivered:
+          type: number
+        timestamp:
           type: string
           format: date-time
 
-  responses:
-    Error:
-      description: Error response
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              code:
-                type: string
-              message:
-                type: string
+    PaymentEvent:
+      type: object
+      properties:
+        payment_id:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [succeeded, failed, refunded]
+        timestamp:
+          type: string
+          format: date-time
 
-security:
-  - ApiKeyAuth: []
+    StationEvent:
+      type: object
+      properties:
+        station_id:
+          type: string
+        event_type:
+          type: string
+          enum: [status_change, maintenance, offline]
+        status:
+          type: string
+        reason:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
 
-components:
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
       in: header
-      name: X-API-Key 
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []
