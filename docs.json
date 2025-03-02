@@ -1,0 +1,64 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Charge",
+  "colors": {
+    "primary": "#1fa04b",
+    "light": "#1fa04b",
+    "dark": "#0D9373"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "anchors": [
+      {
+        "anchor": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "API Reference",
+            "pages": [
+              "list-available-charging-stations",
+              "get-station-details",
+              "get-station-status"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Blog",
+          "href": "https://chargeapi.co/blog",
+          "icon": "newspaper"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "https://chargeapi.co/public/img/logo.png",
+    "dark": "https://chargeapi.co/public/img/logo-white.png",
+    "href": "https://chargeapi.co"
+  },
+  "appearance": {
+    "default": "light"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Contact",
+        "href": "https://chargeapi.co/contact"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get API Keys",
+      "href": "https://chargeapi.co/signup"
+    }
+  },
+  "footer": {
+    "socials": {
+      "linkedin": "https://www.linkedin.com/company/chargeapi"
+    }
+  }
+}
